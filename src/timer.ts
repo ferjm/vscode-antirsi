@@ -70,15 +70,13 @@ export class Timer {
     }
 
     protected _convertMS(ms: number): string {
-        function pad(num: number) {
-            return ('00' + num).slice(-2);
+        const date = new Date(ms);
+        let str = '';
+        const minutes = date.getUTCMinutes();
+        if (minutes > 0) {
+            return `${minutes} min.`;
         }
-        var mins, secs;
-        secs = Math.floor(ms / 1000);
-        mins = Math.floor(secs / 60);
-        secs = secs % 60;
-
-        return pad(mins) + ':' + pad(secs);
+        return `${date.getUTCSeconds()} sec.`;
     };
 
     public dispose() {
