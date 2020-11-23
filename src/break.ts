@@ -5,23 +5,18 @@ export class Break extends Timer {
     private _notificationResolver: Function;
     private _notificationProgress: vscode.Progress<any>;
     private _originalStatusBarColor: string | undefined;
+    private _keystrokesObserver: vscode.Disposable;
 
     constructor(start: number = 0, label: string, onDone: Function) {
-        const workbench = vscode.workspace.getConfiguration('workbench');
-
         super(start, () => {
+            this._dismissUI();
             onDone();
-            // Go back to previous status bar color.
-            workbench.update('colorCustomizations', {
-                'statusBar.background': this._originalStatusBarColor,
-            });
-            // Dismiss notification.
-            this._notificationResolver();
         }, (time) => {
             this._updateUI(time);
         });
 
         // Show red status bar.
+        const workbench = vscode.workspace.getConfiguration('workbench');
         this._originalStatusBarColor = workbench.get('statusBar.background');
         workbench.update('colorCustomizations', {
             'statusBar.background': 'red'
@@ -34,6 +29,7 @@ export class Break extends Timer {
             cancellable: true,
         }, (progress, token) => {
             token.onCancellationRequested(() => {
+                this._dismissUI();
                 onDone();
             });
 
@@ -42,6 +38,16 @@ export class Break extends Timer {
                 this._notificationResolver = resolve;
             });
         });
+
+        // Listen for keystrokes.
+        // Every time we detect activity, we restart the counter.
+        // Breaks are meant to be respected!
+        let subscriptions: vscode.Disposable[] = [];
+        vscode.window.onDidChangeTextEditorSelection(this._onKeystroke, this, subscriptions);
+        vscode.window.onDidChangeActiveTextEditor(this._onKeystroke, this, subscriptions);
+
+        this._keystrokesObserver = vscode.Disposable.from(...subscriptions);
+
     }
 
     private _updateUI(time: number) {
@@ -51,6 +57,20 @@ export class Break extends Timer {
         });
     }
 
+    private _dismissUI() {
+        // Go back to previous status bar color.
+        vscode.workspace.getConfiguration('workbench').update('colorCustomizations', {
+            'statusBar.background': this._originalStatusBarColor,
+        });
+        // Dismiss notification.
+        this._notificationResolver();
+    }
+
+    private _onKeystroke() {
+        this.reset();
+    }
+
     public dispose() {
+        this._keystrokesObserver.dispose();
     }
 }
