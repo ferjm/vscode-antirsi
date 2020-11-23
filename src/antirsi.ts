@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import { Break } from './break';
+import { NextBreak } from './next_break';
 import { CountDirection, SECOND, Timer } from './timer';
 
 export class AntiRSI {
@@ -6,8 +8,13 @@ export class AntiRSI {
 
     private _keystrokesObserver: vscode.Disposable;
 
-    private _microPauseTimer: Timer;
-    private _workBreakTimer: Timer;
+    // Timers for the next micro pause or the next work break.
+    private _nextMicroPauseTimer: Timer;
+    private _nextWorkBreakTimer: Timer;
+
+    // Timer for the actual micro pause or work break.
+    private _breakTimer: Timer;
+
     private _keystrokeTimer: NodeJS.Timer;
 
     private _running: boolean = false;
@@ -19,10 +26,6 @@ export class AntiRSI {
         vscode.window.onDidChangeActiveTextEditor(this._onKeystroke, this, subscriptions);
 
         this._keystrokesObserver = vscode.Disposable.from(...subscriptions);
-
-        // XXX Get this from config.
-        this._workBreakTimer = new Timer(50 * 60 * SECOND, 'Break');
-        this._microPauseTimer = new Timer(4 * 60 * SECOND, 'Pause');
     }
 
     public static getInstance(): AntiRSI {
@@ -35,32 +38,51 @@ export class AntiRSI {
     public run() {
         if (!this._running) {
             this._running = true;
-            this._microPauseTimer.start(() => { });
-            this._workBreakTimer.start(() => { });
+
+            // XXX Get this from config.
+            this._nextWorkBreakTimer = new NextBreak(50 * 60 * SECOND, 'Break', () => {
+                this._nextWorkBreakTimer.stop();
+                this._nextWorkBreakTimer.dispose();
+            });
+            this._nextMicroPauseTimer = new NextBreak(10 * SECOND, 'Pause', () => {
+                this._nextMicroPauseTimer.stop();
+                this._nextMicroPauseTimer.dispose();
+                this._breakTimer = new Break(10 * SECOND, 'Micro Pause', () => {
+                    // XXX Go back to next micro pause timer.
+                });
+                this._breakTimer.start();
+            });
+
+            this._nextMicroPauseTimer.start();
+            this._nextWorkBreakTimer.start();
         }
     }
 
     private _onKeystroke() {
+        if (this._breakTimer !== undefined) {
+            return;
+        }
+
         this.run();
 
         if (this._keystrokeTimer) {
             clearTimeout(this._keystrokeTimer);
         }
 
-        this._microPauseTimer.switchDirection(CountDirection.down);
-        this._workBreakTimer.switchDirection(CountDirection.down);
+        this._nextMicroPauseTimer.switchDirection(CountDirection.down);
+        this._nextWorkBreakTimer.switchDirection(CountDirection.down);
 
-        // 10 seconds without activity will be considered a pause
+        // 20 seconds without activity will be considered a pause
         // and will make the timers switch counting direction.
         this._keystrokeTimer = setTimeout(() => {
-            this._microPauseTimer.switchDirection(CountDirection.up);
-            this._workBreakTimer.switchDirection(CountDirection.up);
-        }, 10 * SECOND);
+            this._nextMicroPauseTimer.switchDirection(CountDirection.up);
+            this._nextWorkBreakTimer.switchDirection(CountDirection.up);
+        }, 20 * SECOND);
     }
 
     public dispose() {
         this._keystrokesObserver.dispose();
-        this._microPauseTimer.dispose();
-        this._workBreakTimer.dispose();
+        this._nextMicroPauseTimer.dispose();
+        this._nextWorkBreakTimer.dispose();
     }
 }

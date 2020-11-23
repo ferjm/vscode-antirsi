@@ -7,25 +7,27 @@ export enum CountDirection {
     up
 };
 
+export interface OnTick {
+    (time: number): void;
+}
+
 export class Timer {
     private _currentTime: number;
     private _startTime: number;
     private _timer: NodeJS.Timer;
     private _countDirection: CountDirection = CountDirection.down;
-    private _ui: vscode.StatusBarItem;
-    private _label: string;
     private _running: boolean = false;
+    private _ondone: Function;
+    private _ontick: Function;
 
-    constructor(start: number = 0, label: string) {
+    constructor(start: number = 0, onDone: Function, onTick: OnTick) {
         this._startTime = start;
         this._currentTime = start;
-        this._ui = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
-        this._label = label;
-        this._updateUI();
-        this._ui.show();
+        this._ondone = onDone;
+        this._ontick = onTick;
     }
 
-    public start(onDone: Function) {
+    public start() {
         if (this._running) {
             return;
         }
@@ -33,11 +35,11 @@ export class Timer {
         this._timer = setInterval(() => {
             this._tick();
 
-            this._updateUI();
+            this._ontick(this._currentTime);
 
             if (this._currentTime <= 0) {
                 this.stop();
-                onDone();
+                this._ondone();
             } else if (this._currentTime >= this._startTime) {
                 this.stop();
             }
@@ -56,6 +58,7 @@ export class Timer {
 
     public switchDirection(direction: CountDirection) {
         this._countDirection = direction;
+        this.start();
     }
 
     private _tick() {
@@ -66,7 +69,7 @@ export class Timer {
         }
     }
 
-    private _convertMS(ms: number): string {
+    protected _convertMS(ms: number): string {
         function pad(num: number) {
             return ('00' + num).slice(-2);
         }
@@ -78,12 +81,7 @@ export class Timer {
         return pad(mins) + ':' + pad(secs);
     };
 
-    private _updateUI() {
-        this._ui.text = `${this._label}: ${this._convertMS(this._currentTime)}`;
-    }
-
     public dispose() {
         this.stop();
-        this._ui.dispose();
     }
 }
