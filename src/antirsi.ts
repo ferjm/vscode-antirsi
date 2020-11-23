@@ -3,6 +3,11 @@ import { Break } from './break';
 import { NextBreak } from './next_break';
 import { CountDirection, SECOND, Timer } from './timer';
 
+// TODO
+// - Get timers and breaks duration from config.
+// - Commands to start, stop and reset counters.
+// - Restart break timers on keystroke.
+
 export class AntiRSI {
     private static _instance: AntiRSI;
 
@@ -13,7 +18,7 @@ export class AntiRSI {
     private _nextWorkBreakTimer: Timer;
 
     // Timer for the actual micro pause or work break.
-    private _breakTimer: Timer;
+    private _breakTimer: Timer | undefined;
 
     private _keystrokeTimer: NodeJS.Timer;
 
@@ -38,24 +43,46 @@ export class AntiRSI {
     public run() {
         if (!this._running) {
             this._running = true;
-
-            // XXX Get this from config.
-            this._nextWorkBreakTimer = new NextBreak(50 * 60 * SECOND, 'Break', () => {
-                this._nextWorkBreakTimer.stop();
-                this._nextWorkBreakTimer.dispose();
-            });
-            this._nextMicroPauseTimer = new NextBreak(10 * SECOND, 'Pause', () => {
-                this._nextMicroPauseTimer.stop();
-                this._nextMicroPauseTimer.dispose();
-                this._breakTimer = new Break(10 * SECOND, 'Micro Pause', () => {
-                    // XXX Go back to next micro pause timer.
-                });
-                this._breakTimer.start();
-            });
-
-            this._nextMicroPauseTimer.start();
-            this._nextWorkBreakTimer.start();
+            this._startNextWorkBreakTimer();
+            this._startNextMicroPauseTimer();
         }
+    }
+
+    private _startNextMicroPauseTimer() {
+        this._nextMicroPauseTimer = new NextBreak(10 * SECOND, 'Pause', this._onNextMicroPause.bind(this));
+        this._nextMicroPauseTimer.start();
+    }
+
+    private _onNextMicroPause() {
+        this._nextMicroPauseTimer.stop();
+        this._nextMicroPauseTimer.dispose();
+        this._breakTimer = new Break(10 * SECOND, 'Micro Pause', () => {
+            this._disposeBreak();
+            this._startNextMicroPauseTimer();
+        });
+        this._breakTimer.start();
+    }
+
+    private _startNextWorkBreakTimer() {
+        this._nextWorkBreakTimer = new NextBreak(50 * 60 * SECOND, 'Break', this._onNextWorkBreak.bind(this));
+        this._nextWorkBreakTimer.start();
+
+    }
+
+    private _onNextWorkBreak() {
+        this._nextWorkBreakTimer.stop();
+        this._nextWorkBreakTimer.dispose();
+        this._breakTimer = new Break(10 * 60 * SECOND, 'Work Break', () => {
+            this._disposeBreak();
+            this._startNextWorkBreakTimer();
+        });
+        this._breakTimer.start();
+    }
+
+    private _disposeBreak() {
+        this._breakTimer?.stop();
+        this._breakTimer?.dispose();
+        this._breakTimer = undefined;
     }
 
     private _onKeystroke() {
@@ -84,5 +111,6 @@ export class AntiRSI {
         this._keystrokesObserver.dispose();
         this._nextMicroPauseTimer.dispose();
         this._nextWorkBreakTimer.dispose();
+        this._breakTimer?.dispose();
     }
 }
