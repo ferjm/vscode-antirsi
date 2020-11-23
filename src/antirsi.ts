@@ -6,12 +6,12 @@ import { CountDirection, SECOND, Timer } from './timer';
 // TODO
 // - Get timers and breaks duration from config.
 // - Commands to start, stop and reset counters.
-// - Restart break timers on keystroke.
 
 export class AntiRSI {
     private static _instance: AntiRSI;
 
     private _keystrokesObserver: vscode.Disposable;
+    private _keystrokeTimer: NodeJS.Timer;
 
     // Timers for the next micro pause or the next work break.
     private _nextMicroPauseTimer: Timer;
@@ -19,8 +19,6 @@ export class AntiRSI {
 
     // Timer for the actual micro pause or work break.
     private _breakTimer: Timer | undefined;
-
-    private _keystrokeTimer: NodeJS.Timer;
 
     private _running: boolean = false;
 

@@ -51,6 +51,8 @@ export class Break extends Timer {
     }
 
     private _updateUI(time: number) {
+        // Update notification progress with the time remaining
+        // for the break.
         this._notificationProgress.report({
             increment: this._convertMS(time),
             message: `${this._convertMS(time)}`
@@ -67,7 +69,10 @@ export class Break extends Timer {
     }
 
     private _onKeystroke() {
+        // If the user has activity while on a break,
+        // we reset the break and start over.
         this.reset();
+        this.start();
     }
 
     public dispose() {
