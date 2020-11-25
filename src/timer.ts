@@ -73,6 +73,13 @@ export class Timer {
     protected _convertMS(ms: number): string {
         const date = new Date(ms);
         let str = '';
+        const hours = date.getUTCHours();
+        if (hours > 0) {
+            if (hours === 1) {
+                return `${hours} hour`;
+            }
+            return `${hours} hours`;
+        }
         const minutes = date.getUTCMinutes();
         if (minutes > 0) {
             return `${minutes} min.`;
