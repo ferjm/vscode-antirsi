@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import { Break } from './break';
+import { getConfig } from './config';
 import { NextBreak } from './next_break';
 import { CountDirection, SECOND, Timer } from './timer';
 
 // TODO
-// - Get timers and breaks duration from config.
 // - Commands to start, stop and reset counters.
 
 export class AntiRSI {
@@ -47,14 +47,14 @@ export class AntiRSI {
     }
 
     private _startNextMicroPauseTimer() {
-        this._nextMicroPauseTimer = new NextBreak(10 * SECOND, 'Pause', this._onNextMicroPause.bind(this));
+        this._nextMicroPauseTimer = new NextBreak(getConfig().microPauseInterval, 'Pause', this._onNextMicroPause.bind(this));
         this._nextMicroPauseTimer.start();
     }
 
     private _onNextMicroPause() {
         this._nextMicroPauseTimer.stop();
         this._nextMicroPauseTimer.dispose();
-        this._breakTimer = new Break(10 * SECOND, 'Micro Pause', () => {
+        this._breakTimer = new Break(getConfig().microPauseDuration, 'Micro Pause', () => {
             this._disposeBreak();
             this._startNextMicroPauseTimer();
         });
@@ -62,7 +62,7 @@ export class AntiRSI {
     }
 
     private _startNextWorkBreakTimer() {
-        this._nextWorkBreakTimer = new NextBreak(50 * 60 * SECOND, 'Break', this._onNextWorkBreak.bind(this));
+        this._nextWorkBreakTimer = new NextBreak(getConfig().workBreakInterval, 'Break', this._onNextWorkBreak.bind(this));
         this._nextWorkBreakTimer.start();
 
     }
@@ -70,7 +70,7 @@ export class AntiRSI {
     private _onNextWorkBreak() {
         this._nextWorkBreakTimer.stop();
         this._nextWorkBreakTimer.dispose();
-        this._breakTimer = new Break(10 * 60 * SECOND, 'Work Break', () => {
+        this._breakTimer = new Break(getConfig().workBreakDuration, 'Work Break', () => {
             this._disposeBreak();
             this._startNextWorkBreakTimer();
         });
@@ -102,7 +102,7 @@ export class AntiRSI {
         this._keystrokeTimer = setTimeout(() => {
             this._nextMicroPauseTimer.switchDirection(CountDirection.up);
             this._nextWorkBreakTimer.switchDirection(CountDirection.up);
-        }, 20 * SECOND);
+        }, getConfig().naturalBreak);
     }
 
     public dispose() {
