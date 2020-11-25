@@ -1,65 +1,34 @@
 # antirsi README
 
-This is the README for your extension "antirsi". After writing up a brief description, we recommend including the following sections.
+AntiRSI is a Visual Code Extension that helps prevent RSI (Repetitive Strain Injury). It does so by forcing you to take regular breaks, yet without getting in the way. It also detects natural breaks so it will not force too many breaks on you.
 
-## Features
+## How it works
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+By default, the extension shows two timers on the status bar:
 
-For example if there is an image subfolder under your extension project workspace:
+- Next micro pause countdown. 4 minutes by default.
+- Next work break countdown. 50 minutes by default.
 
-\!\[feature X\]\(images/feature-x.png\)
+The countdowns starts as soon as the extension detects activity on the editor. It will not stop until a natural break is detected or until it reaches the end.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+If a natural break is detected, the timers will stop and they will start counting up, until new activity is detected.
 
-## Requirements
+When a countdown finishes, a break is suggested by changing the IDE status bar color to red and showing a notification with a new countdown and the type of break. There are two types of breaks:
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- Micro pauses. 12 seconds by default.
+- Work breaks. 8 minutes by default.
 
-## Extension Settings
+All breaks can be canceled and postponed.
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+Sit up straight, don't slouch and do your [streching excercises](https://www.rsipain.com/stretching-exercises.php)!
 
-For example:
+## Commands
+This extension contributes the following commands (Cmd+Shift+P on MacOs, Ctrl+Shift+P on Windows and Linux):
 
-This extension contributes the following settings:
+- `AntiRSI: Run`: Starts the AntiRSI timers if they are not already running. Timers also start automatically after detecting editor activity unless a previous `Stop` command was executed. In that case, an explicit `Run` command is required.
+- `AntiRSI: Stop`: Stops the AntiRSI timers.
+- `AntiRSI: Reset`: Resets the AntiRSI timers. This command will not work during micro pauses or work breaks.
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+## License
 
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+MIT @ Fernando Jiménez Moreno
