@@ -11,14 +11,24 @@
 	],
 	"activationEvents": [
 		"*",
-		"onCommand:antirsi.run"
+		"onCommand:antirsi.run",
+		"onCommand:antirsi.stop",
+		"onCommand:antirsi.reset"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
 				"command": "antirsi.run",
-				"title": "Run"
+				"title": "AntiRSI: Run"
+			},
+			{
+				"command": "antirsi.stop",
+				"title": "AntiRSI: Stop"
+			},
+			{
+				"command": "antirsi.reset",
+				"title": "AntiRSI: Reset"
 			}
 		]
 	},

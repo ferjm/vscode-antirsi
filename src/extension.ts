@@ -33,6 +33,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register for clean up.
 	context.subscriptions.push(antiRSI);
+
+	vscode.commands.registerCommand(`antirsi.run`, () => antiRSI.run(/* listenForKeystrokes */ true));
+	vscode.commands.registerCommand(`antirsi.stop`, () => antiRSI.stop());
+	vscode.commands.registerCommand(`antirsi.reset`, () => antiRSI.reset());
 }
 
 export function deactivate() { }

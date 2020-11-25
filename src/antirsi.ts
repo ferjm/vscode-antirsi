@@ -4,14 +4,11 @@ import { getConfig } from './config';
 import { NextBreak } from './next_break';
 import { CountDirection, SECOND, Timer } from './timer';
 
-// TODO
-// - Commands to start, stop and reset counters.
-
 export class AntiRSI {
     private static _instance: AntiRSI;
 
     private _keystrokesObserver: vscode.Disposable;
-    private _keystrokeTimer: NodeJS.Timer;
+    private _keystrokesTimer: NodeJS.Timer;
 
     // Timers for the next micro pause or the next work break.
     private _nextMicroPauseTimer: Timer;
@@ -23,12 +20,7 @@ export class AntiRSI {
     private _running: boolean = false;
 
     private constructor() {
-        // Listen for keystrokes.
-        let subscriptions: vscode.Disposable[] = [];
-        vscode.window.onDidChangeTextEditorSelection(this._onKeystroke, this, subscriptions);
-        vscode.window.onDidChangeActiveTextEditor(this._onKeystroke, this, subscriptions);
-
-        this._keystrokesObserver = vscode.Disposable.from(...subscriptions);
+        this._listenForKeystrokes();
     }
 
     public static getInstance(): AntiRSI {
@@ -38,12 +30,42 @@ export class AntiRSI {
         return AntiRSI._instance;
     }
 
-    public run() {
-        if (!this._running) {
-            this._running = true;
-            this._startNextWorkBreakTimer();
-            this._startNextMicroPauseTimer();
+    private _listenForKeystrokes() {
+        let subscriptions: vscode.Disposable[] = [];
+        vscode.window.onDidChangeTextEditorSelection(this._onKeystroke, this, subscriptions);
+        vscode.window.onDidChangeActiveTextEditor(this._onKeystroke, this, subscriptions);
+
+        this._keystrokesObserver = vscode.Disposable.from(...subscriptions);
+    }
+
+    public run(listenForKeystrokes: boolean = false) {
+        if (this._running) {
+            return;
         }
+        this._running = true;
+        this._startNextWorkBreakTimer();
+        this._startNextMicroPauseTimer();
+        if (listenForKeystrokes) {
+            this._listenForKeystrokes();
+        }
+    }
+
+    public stop() {
+        if (!this._running) {
+            return;
+        }
+        this._running = false;
+        this.dispose();
+    }
+
+    public reset() {
+        if (!this._running || this._breakTimer) {
+            return;
+        }
+        this._nextWorkBreakTimer.reset();
+        this._nextMicroPauseTimer.reset();
+        this._nextWorkBreakTimer.start();
+        this._nextMicroPauseTimer.start();
     }
 
     private _startNextMicroPauseTimer() {
@@ -90,8 +112,8 @@ export class AntiRSI {
 
         this.run();
 
-        if (this._keystrokeTimer) {
-            clearTimeout(this._keystrokeTimer);
+        if (this._keystrokesTimer) {
+            clearTimeout(this._keystrokesTimer);
         }
 
         this._nextMicroPauseTimer.switchDirection(CountDirection.down);
@@ -99,7 +121,7 @@ export class AntiRSI {
 
         // 20 seconds without activity will be considered a pause
         // and will make the timers switch counting direction.
-        this._keystrokeTimer = setTimeout(() => {
+        this._keystrokesTimer = setTimeout(() => {
             this._nextMicroPauseTimer.switchDirection(CountDirection.up);
             this._nextWorkBreakTimer.switchDirection(CountDirection.up);
         }, getConfig().naturalBreak);
@@ -109,6 +131,9 @@ export class AntiRSI {
         this._keystrokesObserver.dispose();
         this._nextMicroPauseTimer.dispose();
         this._nextWorkBreakTimer.dispose();
-        this._breakTimer?.dispose();
+        this._disposeBreak();
+        if (this._keystrokesTimer) {
+            clearTimeout(this._keystrokesTimer);
+        }
     }
 }

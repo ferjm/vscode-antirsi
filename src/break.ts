@@ -76,6 +76,8 @@ export class Break extends Timer {
     }
 
     public dispose() {
+        super.dispose();
+        this._dismissUI();
         this._keystrokesObserver.dispose();
     }
 }

@@ -20,6 +20,7 @@ export class NextBreak extends Timer {
     }
 
     public dispose() {
+        super.dispose();
         this._ui.dispose();
     }
 }
