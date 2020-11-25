@@ -4,6 +4,8 @@ AntiRSI is a Visual Code Extension that helps prevent RSI (Repetitive Strain Inj
 
 ## How it works
 
+![Preview](images/antirsi_preview.gif)
+
 By default, the extension shows two timers on the status bar:
 
 - Next micro pause countdown. 4 minutes by default.
